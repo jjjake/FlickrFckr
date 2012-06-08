@@ -9,15 +9,13 @@ cd $USER
 for page in `seq 1 $numPages`
 do
 	echo "Getting page $page"
-	wget -q -O "$USER"_$page.html http://www.flickr.com/photos/"$USER"/page$page
+	wget -q -nc -O "$USER"_$page.html http://www.flickr.com/photos/"$USER"/page$page
 done
 for imagePage in *
 do
-echo "We're processing $imagePage"
-for ID in `cat $imagePage|grep photo_container|grep -oE "/photos/$USER/[0-9]*/"|grep -oE "/[0-9]*/"|sed 's/\///g'`
-do
-echo "We're processing $ID"
-pwd
-../flickrGrabImage "$USER" "$ID"
-done
+    for ID in `cat $imagePage|grep photo_container|grep -oE "/photos/$USER/[0-9]*/"|grep -oE "/[0-9]*/"|sed 's/\///g'`
+    do
+        echo "We're processing $ID"
+        ../flickrGrabImage "$USER" "$ID"
+    done
 done
