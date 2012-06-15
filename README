@@ -1,5 +1,8 @@
 Some brutally simple scripts to download a Flickr user's images in the highest quality.
 
-I plan on making these a lot cleaner (eventually, hah).
-
 Needs Ruby and the JSON and YAML gems
+
+Forked from: https://github.com/ab2525/FlickrFckr
+
+This fork is geared towards downloading all of a user's images and preparing them to
+be ingested into archive.org.
