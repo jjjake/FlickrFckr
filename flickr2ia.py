@@ -1,9 +1,9 @@
 #!/home/jake/.virtualenvs/default/bin/python
-import urllib2
 import os
-import yaml
-import simplejson as json
 import datetime
+import urllib2
+
+import yaml
 from lxml import etree
 
 
