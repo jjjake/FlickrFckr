@@ -59,26 +59,29 @@ def mk_metadata(meta_dict, ITEM_DIR):
 ROOT_DIR = os.getcwd()
 items = [x[0] for x in os.walk('nasahqphoto') if x[0] != 'nasahqphoto']
 for item in items:
-    identifier = item.split('/')[-1]
-    ITEM_DIR = os.path.join(ROOT_DIR, 'nasahqphoto', identifier)
-    print ITEM_DIR
-    info_file = os.path.join(ITEM_DIR, '%s_info.yaml' % identifier)
-    comments_file = info_file.replace('_info.yaml', '_comments.yaml')
-    exif_file = info_file.replace('_info.yaml', '_exif.yaml')
-    people_file = info_file.replace('_info.yaml', '_people.yaml')
-    tags_file = info_file.replace('_info.yaml', '_tags.yaml')
-    og_photo = info_file.replace('_info.yaml', '_jpg')
-    meta_dict = yaml.load(open(info_file).read())['photo']
-    ia_meta = dict(identifier = "nasahqphoto-%s" % meta_dict['id'],
-                   description = meta_dict['description']['_content'],
-                   date = meta_dict['dates']['taken'].strftime('%Y-%m-%d'),
-                   subject = '; '.join([x['raw'] for x in meta_dict['tags']['tag']]),
-                   source = meta_dict['urls']['url'][0]['_content'],
-                   title = meta_dict['title']['_content'],
-                   coverage = get_coverage(meta_dict['location']),
-                   license = get_license(meta_dict['license']),
-                   mediatype = 'image',
-                   collection = 'nasaheadquartersflickrstream',
-                   creator = 'NASA')
-    ia_meta = dict((k,v) for (k,v) in ia_meta.iteritems() if v)
-    mk_metadata(ia_meta, ITEM_DIR)
+    try:
+        identifier = item.split('/')[-1]
+        print "CREATING::\t%s" % identifier
+        ITEM_DIR = os.path.join(ROOT_DIR, 'nasahqphoto', identifier)
+        info_file = os.path.join(ITEM_DIR, '%s_info.yaml' % identifier)
+        comments_file = info_file.replace('_info.yaml', '_comments.yaml')
+        exif_file = info_file.replace('_info.yaml', '_exif.yaml')
+        people_file = info_file.replace('_info.yaml', '_people.yaml')
+        tags_file = info_file.replace('_info.yaml', '_tags.yaml')
+        og_photo = info_file.replace('_info.yaml', '.jpg')
+        meta_dict = yaml.load(open(info_file).read())['photo']
+        ia_meta = dict(identifier = "nasahqphoto-%s" % meta_dict['id'],
+                       description = meta_dict['description']['_content'],
+                       date = meta_dict['dates']['taken'].strftime('%Y-%m-%d'),
+                       subject = '; '.join([x['raw'] for x in meta_dict['tags']['tag']]),
+                       source = meta_dict['urls']['url'][0]['_content'],
+                       title = meta_dict['title']['_content'],
+                       coverage = get_coverage(meta_dict['location']),
+                       license = get_license(meta_dict['license']),
+                       mediatype = 'image',
+                       collection = 'nasaheadquartersflickrstream',
+                       creator = 'NASA')
+        ia_meta = dict((k,v) for (k,v) in ia_meta.iteritems() if v)
+        mk_metadata(ia_meta, ITEM_DIR)
+    except:
+        print "ERROR\t%s" % item

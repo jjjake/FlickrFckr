@@ -1,12 +1,14 @@
 #!/bin/bash
 #Grabs a single photo
 #usage: ./flickrGrabImage username photoid api_key
+
 USER="$1"
 ID="$2"
 #API_KEY=$3
 API_KEY=`curl -s http://www.flickr.com/services/api/explore/?method=flickr.photos.licenses.getInfo|grep -o "api_key\"\:\"[0-9a-z]*\""|tr "\"" " "|awk '{print $NF}'`
 wget -q -O nasahqphoto-$ID.html http://www.flickr.com/photos/$USER/$ID/
 dataElement=`cat nasahqphoto-$ID.html|grep "Y.photo"|head -n1|tail -c +10|head -c -2`
+
 imageUrl=`cat nasahqphoto-$ID.html|grep -oE "http://farm(.).staticflickr.com/.*/.*_o.jpg"|tail -n1`
 if [ -z $imageUrl ]; then
     imageUrl=`cat nasahqphoto-$ID.html|grep -oE "http://farm(.).staticflickr.com/.*/.*_b.jpg"|tail -n1`
@@ -14,24 +16,27 @@ fi
 if [ -z $imageUrl ]; then
     imageUrl=`cat nasahqphoto-$ID.html|grep -oE "http://farm(.).staticflickr.com/.*/.*_z.jpg"|tail -n1`
 fi
-echo "imageUrl: $imageUrl"
-IDENTIFIER=nasahqphoto-$ID
-OLD_IDENTIFIER=$(echo "$imageUrl" | sed 's/\.jpg//' | cut -d / -f5)
-# Download this item if it isn't already in the archive.org nasaheadquartersflickrstream collection.
-if [[ "$(curl -s http://archive.org/metadata/$OLD_IDENTIFIER)" == "{}" && "$(curl -s http://archive.org/metadata/$IDENTIFIER)" == "{}" ]]
+
+if [[ -z $(curl -s "http://archive.org/advancedsearch.php?q=$ID&fl%5B%5D=collection&fl%5B%5D=identifier&output=json" | grep nasaheadquartersflickrstream) ]]
 then
+    IDENTIFIER=nasahqphoto-$ID
     mkdir -p $IDENTIFIER
     cd $IDENTIFIER
-    pwd
-    date_taken=`echo $dataElement|grep -oE "....-..-.. ..:..:.."|tr " " "_"`
-    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.getInfo&api_key=$API_KEY&photo_id=$ID&format=json"|ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_info.yaml
-    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.comments.getList&api_key=$API_KEY&photo_id=$ID&format=json"|ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_comments.yaml
-    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.tags.getListPhoto&api_key=$API_KEY&photo_id=$ID&format=json"|ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_tags.yaml
-    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.people.getList&api_key=$API_KEY&photo_id=$ID&format=json"|ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_people.yaml
-    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.getExif&api_key=$API_KEY&photo_id=$ID&format=json"|ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_exif.yaml
-    wget -nc -O $IDENTIFIER.jpg "$imageUrl"
-    rm *html
+    echo -e "DOWNLOADING::\t$imageUrl"
+
+    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.getInfo&api_key=$API_KEY&photo_id=$ID&format=json" |
+    ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_info.yaml
+    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.comments.getList&api_key=$API_KEY&photo_id=$ID&format=json" |
+    ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_comments.yaml
+    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.tags.getListPhoto&api_key=$API_KEY&photo_id=$ID&format=json" |
+    ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_tags.yaml
+    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.people.getList&api_key=$API_KEY&photo_id=$ID&format=json" |
+    ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_people.yaml
+    curl -s "http://api.flickr.com/services/rest/?nojsoncallback=1&method=flickr.photos.getExif&api_key=$API_KEY&photo_id=$ID&format=json" | 
+    ruby  -e 'require "json";require "yaml"; puts YAML.dump(JSON.parse($stdin.gets))'>${IDENTIFIER}_exif.yaml
+
+    wget -c -O $IDENTIFIER.jpg "$imageUrl"
     cd ../../
 else
-    echo "This item is already in the Archive!"
+    echo -e "SKIPPING::\tThis item is already in the archive!"
 fi

@@ -1,21 +1,39 @@
 #!/bin/bash
 #Get all of a flickr users photos, and their metadata.
 #usage: ./flickrgrabr username
+
 USER="$1"
+DATE_STOP=201206
 mkdir -p $USER
 numPages=`curl -s http://www.flickr.com/photos/$USER/|grep -oE "/photos/$USER/page.*/\">.*</a>"|tail -n1|tr "><" " "|awk '{print $2}'`
-echo "User has $numPages pages of photos"
+echo -e "INFO::\t"$USER" $numPages pages of photos."
 cd $USER
+
 for page in `seq 1 $numPages`
 do
-	echo "Getting page $page"
-	wget -q -nc -O "$USER"_$page.html http://www.flickr.com/photos/"$USER"/page$page
+    if [ -a `pwd`/"$USER"_$page.html ]
+    then
+        continue
+    else
+        echo -e "DOWNLOADING::\t`pwd`/"$USER"_$page.html"
+        wget -q -c -O "$USER"_$page.html http://www.flickr.com/photos/"$USER"/page$page
+    fi
 done
+
 for imagePage in *
 do
-    for ID in `cat $imagePage|grep photo_container|grep -oE "/photos/$USER/[0-9]*/"|grep -oE "/[0-9]*/"|sed 's/\///g'`
-    do
-        echo "We're processing $ID"
-        ../flickrGrabImage "$USER" "$ID"
-    done
+    uploaded_date=$(grep -o -P '(?<=/photos/nasahqphoto/archives/date-posted/)[0-9]{4}/[0-9]{2}' $imagePage | head -1 | sed 's/\///g')
+    if [ $uploaded_date -lt $DATE_STOP ]
+    then
+        continue
+    else
+        for ID in `cat $imagePage|grep photo_container|grep -oE "/photos/$USER/[0-9]*/"|grep -oE "/[0-9]*/"|sed 's/\///g'`
+        do
+            echo -e "PROCESSING::\t`pwd`/$USER-$ID"
+            ../flickrGrabImage "$USER" "$ID"
+        done
+    fi
 done
+
+echo -e "\n\nGenerating Archive.org metadata files ...\n\n"
+/home/jake/.virtualenvs/default/bin/python /1/incoming/tmp/FlickrFckr/flickr2ia.py
