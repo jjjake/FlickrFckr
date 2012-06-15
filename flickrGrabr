@@ -1,9 +1,20 @@
 #!/bin/bash
 #Get all of a flickr users photos, and their metadata.
-#usage: ./flickrgrabr username
+#Usage: ./flickrgrabr ${USERNAME} ${COLLECTION}
 
-USER="$1"
 DATE_STOP=201206
+if [ -z $1 ]; then 
+    echo -e "!!! You must supply a a flickr username !!!\nUsage: ./flickrgrabr \${USERNAME}" 
+    exit 1
+else
+    USER="$1"
+fi
+if [ -z $2 ]; then 
+    COLLECTION='ourmedia'
+else
+    COLLECTION="$2"
+fi
+
 mkdir -p $USER
 numPages=`curl -s http://www.flickr.com/photos/$USER/|grep -oE "/photos/$USER/page.*/\">.*</a>"|tail -n1|tr "><" " "|awk '{print $2}'`
 echo -e "INFO::\t"$USER" $numPages pages of photos."
@@ -22,7 +33,7 @@ done
 
 for imagePage in *
 do
-    uploaded_date=$(grep -o -P '(?<=/photos/nasahqphoto/archives/date-posted/)[0-9]{4}/[0-9]{2}' $imagePage | head -1 | sed 's/\///g')
+    uploaded_date=$(grep -o -P "(?<=/photos/$USER/archives/date-posted/)[0-9]{4}/[0-9]{2}" $imagePage | head -1 | sed 's/\///g')
     if [ $uploaded_date -lt $DATE_STOP ]
     then
         continue
@@ -36,4 +47,4 @@ do
 done
 
 echo -e "\n\nGenerating Archive.org metadata files ...\n\n"
-/home/jake/.virtualenvs/default/bin/python /1/incoming/tmp/FlickrFckr/flickr2ia.py
+/home/jake/.virtualenvs/default/bin/python /1/incoming/tmp/FlickrFckr/flickr2ia.py $USER $COLLECTION

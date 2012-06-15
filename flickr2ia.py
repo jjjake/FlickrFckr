@@ -1,10 +1,21 @@
 #!/home/jake/.virtualenvs/default/bin/python
+""" Usage: flicrk2ia.py ${USER} ${COLLECTION}"""
+import sys
 import os
 import datetime
 import urllib2
 
 import yaml
 from lxml import etree
+
+if len(sys.argv) == 1:
+    print ("You must supply a a flickr username\nUsage: flickr2ia.py ${USER}")
+    sys.exit()
+elif len(sys.argv) == 2:
+    COLLECTION = 'ourmedia'
+else:
+    COLLECTION = sys.argv[2]
+USER = sys.argv[1]
 
 
 #______________________________________________________________________________
@@ -57,12 +68,12 @@ def mk_metadata(meta_dict, ITEM_DIR):
 
 #______________________________________________________________________________
 ROOT_DIR = os.getcwd()
-items = [x[0] for x in os.walk('nasahqphoto') if x[0] != 'nasahqphoto']
+items = [x[0] for x in os.walk(USER) if x[0] != USER]
 for item in items:
     try:
         identifier = item.split('/')[-1]
         print "CREATING::\t%s" % identifier
-        ITEM_DIR = os.path.join(ROOT_DIR, 'nasahqphoto', identifier)
+        ITEM_DIR = os.path.join(ROOT_DIR, USER, identifier)
         info_file = os.path.join(ITEM_DIR, '%s_info.yaml' % identifier)
         comments_file = info_file.replace('_info.yaml', '_comments.yaml')
         exif_file = info_file.replace('_info.yaml', '_exif.yaml')
@@ -70,7 +81,8 @@ for item in items:
         tags_file = info_file.replace('_info.yaml', '_tags.yaml')
         og_photo = info_file.replace('_info.yaml', '.jpg')
         meta_dict = yaml.load(open(info_file).read())['photo']
-        ia_meta = dict(identifier = "nasahqphoto-%s" % meta_dict['id'],
+        #ia_meta = dict(identifier = "nasahqphoto-%s" % meta_dict['id'],
+        ia_meta = dict(identifier = "%s-%s" % (USER, meta_dict['id']),
                        description = meta_dict['description']['_content'],
                        date = meta_dict['dates']['taken'].strftime('%Y-%m-%d'),
                        subject = '; '.join([x['raw'] for x in meta_dict['tags']['tag']]),
@@ -79,8 +91,7 @@ for item in items:
                        coverage = get_coverage(meta_dict['location']),
                        license = get_license(meta_dict['license']),
                        mediatype = 'image',
-                       collection = 'nasaheadquartersflickrstream',
-                       creator = 'NASA')
+                       collection = COLLECTION)
         ia_meta = dict((k,v) for (k,v) in ia_meta.iteritems() if v)
         mk_metadata(ia_meta, ITEM_DIR)
     except:
